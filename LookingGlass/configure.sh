@@ -211,11 +211,11 @@ function setup()
   local S=''
 
   # User input
-  read -p "Enter your website name (Header/Logo) [${SITE}]: " S
-  read -p "Enter the servers location [${LOCATION}]: " LOC
-  read -p "Enter the test IPv4 address [${IPV4}]: " IP4
-  read -p "Enter the test IPv6 address (Re-enter everytime this script is run) [${IPV6}]: " IP6
-  read -p "Enter the size of test files in MB (Example: 25MB 50MB 100MB) [${TEST[*]}]: " T
+  read -e -p "Enter your website name (Header/Logo) [${SITE}]: " S
+  read -e -p "Enter the servers location [${LOCATION}]: " LOC
+  read -e -p "Enter the test IPv4 address [${IPV4}]: " IP4
+  read -e -p "Enter the test IPv6 address (Re-enter everytime this script is run) [${IPV6}]: " IP6
+  read -e -p "Enter the size of test files in MB (Example: 25MB 50MB 100MB) [${TEST[*]}]: " T
 
   # Check local vars aren't empty; Set new values
   if [[ -n $IP4 ]]; then
@@ -321,7 +321,7 @@ cat <<EOF
 
 EOF
 
-read -p "Do you wish to install LookingGlass? (y/n): " ANSWER
+read -e -p "Do you wish to install LookingGlass? (y/n): " ANSWER
 
 if [[ "$ANSWER" = 'y' ]] || [[ "$ANSWER" = 'yes' ]]; then
   cat <<EOF
