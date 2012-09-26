@@ -44,7 +44,7 @@ if (isset($_GET['cmd']) && isset($_GET['host'])) {
 
         // instantiate LookingGlass & RateLimit
         $lg = new Telephone\LookingGlass();
-        $limit = new Telephone\RateLimit($rateLimit);
+        $limit = new Telephone\LookingGlass\RateLimit($rateLimit);
 
         // check IP against database
         $limit->rateLimit($rateLimit);

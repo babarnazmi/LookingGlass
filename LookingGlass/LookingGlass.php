@@ -32,6 +32,9 @@
  */
 namespace Telephone;
 
+/**
+ * Create a Looking Glass with output buffering
+ */
 class LookingGlass
 {
     /**

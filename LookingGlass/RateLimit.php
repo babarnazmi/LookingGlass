@@ -30,13 +30,22 @@
  * @link        http://iamtelephone.com
  * @version     1.1.0
  */
-namespace Telephone;
+namespace Telephone\LookingGlass;
 
+/**
+ * Implement rate limiting of network commands
+ */
 class RateLimit
 {
-    private $dbh;
-
-    public function rateLimit($limit = 120)
+    /**
+     * Check rate limit against SQLite database
+     *
+     * @param  integer $limit
+     *   Number of commands per hour
+     * @return boolean
+     *   True on success
+     */
+    public function rateLimit($limit)
     {
         // check if rate limit is disabled
         if ($limit === 0) {
