@@ -38,70 +38,6 @@
 #######################
 
 ##
-# Check and install script requirements
-##
-function requirements()
-{
-  sleep 1
-  # Check for apt-get/yum
-  if [ -f /usr/bin/apt-get ]; then
-    # Check for root
-    if [ $(id -u) != "0" ]; then
-      INSTALL='sudo apt-get'
-    else
-      INSTALL='apt-get'
-    fi
-  elif [ -f /usr/bin/yum ]; then
-    INSTALL='yum'
-  else
-    echo 'Skipping script requirements.'
-    return
-  fi
-
-  # Array of required functions
-  REQUIRE=( host iputils-ping mtr traceroute )
-
-  # Loop through required & install
-  for i in "${REQUIRE[@]}"; do
-    # Fix host for CentOS
-    if [ $i = 'host' ]; then
-      echo 'Checking for host...'
-      if [ ! -f "/usr/bin/$i" ]; then
-        if [ $INSTALL = 'yum' ]; then
-          ${INSTALL} -y install "bind-utils"
-        else
-          ${INSTALL} -y install ${i}
-        fi
-        echo ''
-      fi
-    # Fix ping
-    elif [ $i = 'iputils-ping' ]; then
-      echo 'Checking for ping...'
-      if [ ! -f "/bin/ping" ]; then
-        ${INSTALL} -y install ${i}
-        echo ''
-      fi
-    # Check both bin and sbin
-    elif [ $i = 'traceroute' ]; then
-      echo "Checking for $i..."
-      if [ ! -f "/usr/bin/$i" ]; then
-        if [ ! -f "/usr/sbin/$i" ]; then
-          ${INSTALL} -y install ${i}
-          echo ''
-        fi
-      fi
-    else
-      echo "Checking for $i..."
-      if [ ! -f "/usr/bin/$i" ]; then
-        ${INSTALL} -y install ${i}
-        echo ''
-      fi
-    fi
-    sleep 1
-  done
-}
-
-##
 # Create Config.php
 ##
 function createConfig()
@@ -144,6 +80,8 @@ function createConfig()
 \$ipv4 = '${IPV4}';
 // IPv6 address (can be blank)
 \$ipv6 = '${IPV6}';
+// Rate limit
+\$rateLimit = (int) '${RATELIMIT}';
 // Site name (header)
 \$siteName = '${SITE}';
 // Server location
@@ -185,15 +123,115 @@ function config()
         IPV4="$(echo $f2 | awk -F\' '{print $(NF-1)}')"
       elif [ $f1 = '$ipv6' ]; then
         IPV6="$(echo $f2 | awk -F\' '{print $(NF-1)}')"
+      elif [ $f1 = '$rateLimit' ]; then
+        RATELIMIT=("$(echo $f2 | awk -F\' '{print $(NF-1)}')")
       elif [ $f1 = '$serverLocation' ]; then
         LOCATION="$(echo $f2 | awk -F\' '{print $(NF-1)}')"
-      elif [ $f1 = '$testFiles[]' ]; then
-        TEST+=("$(echo $f2 | awk -F\' '{print $(NF-1)}')")
       elif [ $f1 = '$siteName' ]; then
         SITE=("$(echo $f2 | awk -F\' '{print $(NF-1)}')")
+      elif [ $f1 = '$testFiles[]' ]; then
+        TEST+=("$(echo $f2 | awk -F\' '{print $(NF-1)}')")
       fi
     fi
   done < "$DIR/$CONFIG"
+}
+
+##
+# Create SQLite database
+##
+function database()
+{
+    if [ ! -f "${DIR}/ratelimit.db" ]; then
+      echo 'Creating SQLite database...'
+      sqlite3 ratelimit.db  'CREATE TABLE RateLimit (ip TEXT UNIQUE NOT NULL, hits INTEGER NOT NULL DEFAULT 0, accessed INTEGER NOT NULL);'
+      sqlite3 ratelimit.db 'CREATE UNIQUE INDEX "RateLimit_ip" ON "RateLimit" ("ip");'
+    fi
+}
+
+##
+# Fix MTR on REHL based OS
+##
+function mtrFix()
+{
+  # Check permissions for MTR & Symbolic link
+  if [ $(stat --format="%a" /usr/sbin/mtr) -ne 4755 ] || [ ! -f "/usr/bin/mtr" ]; then
+    if [ $(id -u) = "0" ]; then
+      echo 'Fixing MTR permissions...'
+      chmod 4755 /usr/sbin/mtr
+      ln -s /usr/sbin/mtr /usr/bin/mtr
+    else
+      echo '##### IMPORTANT #####'
+      echo 'You are not root. Please log into root and run:'
+      echo 'chmod 4755 /usr/sbin/mtr'
+      echo 'and'
+      echo 'ln -s /usr/sbin/mtr /usr/bin/mtr'
+      echo '#####################'
+    fi
+  fi
+}
+
+##
+# Check and install script requirements
+##
+function requirements()
+{
+  sleep 1
+  # Check for apt-get/yum
+  if [ -f /usr/bin/apt-get ]; then
+    # Check for root
+    if [ $(id -u) != "0" ]; then
+      INSTALL='sudo apt-get'
+    else
+      INSTALL='apt-get'
+    fi
+  elif [ -f /usr/bin/yum ]; then
+    INSTALL='yum'
+  else
+    echo 'Skipping script requirements.'
+    return
+  fi
+
+  # Array of required functions
+  local REQUIRE=(host mtr iputils-ping traceroute sqlite3)
+
+  # Loop through required & install
+  for i in "${REQUIRE[@]}"; do
+    # Fix host for CentOS
+    if [ $i = 'host' ]; then
+      echo 'Checking for host...'
+      if [ ! -f "/usr/bin/$i" ]; then
+        if [ $INSTALL = 'yum' ]; then
+          ${INSTALL} -y install "bind-utils"
+        else
+          ${INSTALL} -y install ${i}
+        fi
+        echo ''
+      fi
+    # Fix ping
+    elif [ $i = 'iputils-ping' ]; then
+      echo 'Checking for ping...'
+      if [ ! -f "/bin/ping" ]; then
+        ${INSTALL} -y install ${i}
+        echo ''
+      fi
+    # Check both bin and sbin
+    elif [ $i = 'traceroute' ]; then
+      echo "Checking for $i..."
+      if [ ! -f "/usr/bin/$i" ]; then
+        if [ ! -f "/usr/sbin/$i" ]; then
+          ${INSTALL} -y install ${i}
+          echo ''
+        fi
+      fi
+    else
+      echo "Checking for $i..."
+      if [ ! -f "/usr/bin/$i" ]; then
+        ${INSTALL} -y install ${i}
+        echo ''
+      fi
+    fi
+    sleep 1
+  done
 }
 
 ##
@@ -216,6 +254,7 @@ function setup()
   read -e -p "Enter the test IPv4 address [${IPV4}]: " IP4
   read -e -p "Enter the test IPv6 address (Re-enter everytime this script is run) [${IPV6}]: " IP6
   read -e -p "Enter the size of test files in MB (Example: 25MB 50MB 100MB) [${TEST[*]}]: " T
+  read -e -p "Do you wish to enable rate limiting of network commands? (y/n): " RATE
 
   # Check local vars aren't empty; Set new values
   if [[ -n $IP4 ]]; then
@@ -229,6 +268,18 @@ function setup()
   if [[ -n $S ]]; then
     SITE=$S
   fi
+  # Rate limit
+  if [[ "$RATE" = 'y' ]] || [[ "$RATE" = 'yes' ]]; then
+    read -e -p "Enter the # of commands allowed per hour (per IP) [${RATELIMIT}]: " RATE
+    if [[ -n $RATE ]]; then
+      if [ "$RATE" != "$RATELIMIT" ]; then
+        RATELIMIT=$RATE
+      fi
+    fi
+  else
+    RATELIMIT=0
+  fi
+  # Create sparse files
   if [[ -n $T ]]; then
     echo ''
     echo 'Removing old sparse files:'
@@ -272,28 +323,6 @@ function testFiles()
   # No sparse files were created
   if [ $A = 0 ]; then
     echo 'Sparse files already exist...'
-  fi
-}
-
-##
-# Fix MTR on REHL based OS
-##
-function mtrFix()
-{
-  # Check permissions for MTR & Symbolic link
-  if [ $(stat --format="%a" /usr/sbin/mtr) -ne 4755 ] || [ ! -f "/usr/bin/mtr" ]; then
-    if [ $(id -u) = "0" ]; then
-      echo 'Fixing MTR permissions...'
-      chmod 4755 /usr/sbin/mtr
-      ln -s /usr/sbin/mtr /usr/bin/mtr
-    else
-      echo '##### IMPORTANT #####'
-      echo 'You are not root. Please log into root and run:'
-      echo 'chmod 4755 /usr/sbin/mtr'
-      echo 'and'
-      echo 'ln -s /usr/sbin/mtr /usr/bin/mtr'
-      echo '#####################'
-    fi
   fi
 }
 
@@ -344,8 +373,9 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 IPV4=''
 IPV6=''
 LOCATION=''
-TEST=()
+RATELIMIT=''
 SITE=''
+TEST=()
 
 # Install required scripts
 echo 'Checking script requirements:'
@@ -371,18 +401,19 @@ echo 'Running setup:'
 setup
 echo ''
 # Create Config.php file
-echo 'Creating Config.php'
+echo 'Creating Config.php...'
 createConfig
-
-# All done
-cat <<EOF
-
-Installation is complete...
-
-EOF
-
+echo ''
+# Create DB
+database
 # Check for RHEL mtr
 if [ "$INSTALL" = 'yum' ]; then
   mtrFix
-  echo ''
 fi
+# All done
+cat <<EOF
+
+Installation is complete
+
+EOF
+sleep 1
