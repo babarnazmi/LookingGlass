@@ -91,7 +91,7 @@ class RateLimit
         if ($accessed > $time) {
             if ($hits >= $limit) {
                 $reset = (int) (($accessed - $time) / 60);
-                if ($reset === 0) {
+                if ($reset <= 1) {
                     exit('Rate limit exceeded. Try again in: 1 minute');
                 }
                 exit('Rate limit exceeded. Try again in: ' . $reset . ' minutes');
@@ -102,7 +102,7 @@ class RateLimit
         } else {
             // reset hits + accessed time
             $q = $dbh->prepare('UPDATE RateLimit SET hits = ?, accessed = ? WHERE ip = ?');
-            $q->execute(array(0, time(), $_SERVER['REMOTE_ADDR']));
+            $q->execute(array(1, time(), $_SERVER['REMOTE_ADDR']));
         }
 
         $dbh = null;
