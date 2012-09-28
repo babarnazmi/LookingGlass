@@ -90,7 +90,11 @@ class RateLimit
         // apply rate limit
         if ($accessed > $time) {
             if ($hits >= $limit) {
-                exit('Rate limit exceeded. Try again in: ' . (int) (($accessed - $time) / 60) . ' minutes');
+                $reset = (int) (($accessed - $time) / 60);
+                if ($reset === 0) {
+                    exit('Rate limit exceeded. Try again in: 1 minute');
+                }
+                exit('Rate limit exceeded. Try again in: ' . $reset . ' minutes');
             }
             // update hits
             $q = $dbh->prepare('UPDATE RateLimit SET hits = ? WHERE ip = ?');
