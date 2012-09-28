@@ -49,8 +49,7 @@ include 'LookingGlass/Config.php';
     <![endif]-->
 
     <!-- Styles -->
-    <link href="assets/css/style.min.css" rel="stylesheet">
-    <link href="assets/css/cerulean.min.css" rel="stylesheet">
+    <link href="assets/css/<?php echo $theme; ?>.min.css" rel="stylesheet">
   </head>
   <body>
     <!-- Container -->
