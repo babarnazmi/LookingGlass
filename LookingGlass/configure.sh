@@ -149,6 +149,21 @@ function database()
       echo 'Creating SQLite database...'
       sqlite3 ratelimit.db  'CREATE TABLE RateLimit (ip TEXT UNIQUE NOT NULL, hits INTEGER NOT NULL DEFAULT 0, accessed INTEGER NOT NULL);'
       sqlite3 ratelimit.db 'CREATE UNIQUE INDEX "RateLimit_ip" ON "RateLimit" ("ip");'
+      read -e -p 'Enter the username of your webserver (E.g. www-data): ' USER
+      if [[ -n $USER ]]; then
+        chown $USER:$USER $DIR
+        chown $USER:$USER ratelimit.db
+      else
+        cat <<EOF
+
+##### IMPORTANT #####
+Please set the owner of LookingGlass (subdirectory) and ratelimit.db
+to that of your webserver.
+chown user:user LookingGlass
+chown user:user ratelimit.db
+#####################
+EOF
+      fi
     fi
 }
 
@@ -164,12 +179,15 @@ function mtrFix()
       chmod 4755 /usr/sbin/mtr
       ln -s /usr/sbin/mtr /usr/bin/mtr
     else
-      echo '##### IMPORTANT #####'
-      echo 'You are not root. Please log into root and run:'
-      echo 'chmod 4755 /usr/sbin/mtr'
-      echo 'and'
-      echo 'ln -s /usr/sbin/mtr /usr/bin/mtr'
-      echo '#####################'
+      cat <<EOF
+
+##### IMPORTANT #####
+You are not root. Please log into root and run:
+chmod 4755 /usr/sbin/mtr
+and
+ln -s /usr/sbin/mtr /usr/bin/mtr
+#####################
+EOF
     fi
   fi
 }
