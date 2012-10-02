@@ -150,8 +150,9 @@ function database()
       sqlite3 ratelimit.db  'CREATE TABLE RateLimit (ip TEXT UNIQUE NOT NULL, hits INTEGER NOT NULL DEFAULT 0, accessed INTEGER NOT NULL);'
       sqlite3 ratelimit.db 'CREATE UNIQUE INDEX "RateLimit_ip" ON "RateLimit" ("ip");'
       read -e -p 'Enter the username of your webserver (E.g. www-data): ' USER
+      # Change owner of folder & DB
       if [[ -n $USER ]]; then
-        chown $USER:$USER $DIR
+        chown $USER:$USER "${DIR}"
         chown $USER:$USER ratelimit.db
       else
         cat <<EOF
