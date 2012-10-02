@@ -28,7 +28,7 @@
 # author      Nick Adams <nick89@zoho.com>
 # copyright   2012 Nick Adams.
 # link        http://iamtelephone.com
-# version     1.1.0
+# version     1.2.0
 ################################
 
 #######################
@@ -73,7 +73,7 @@ function createConfig()
  * @author      Nick Adams <nick89@zoho.com>
  * @copyright   2012 Nick Adams.
  * @link        http://iamtelephone.com
- * @version     1.1.0
+ * @version     1.2.0
  */
 
 // IPv4 address

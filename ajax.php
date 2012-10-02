@@ -28,7 +28,7 @@
  * @author      Nick Adams <nick89@zoho.com>
  * @copyright   2012 Nick Adams.
  * @link        http://iamtelephone.com
- * @version     1.1.0
+ * @version     1.2.0
  */
 // check whether command and host are set
 if (isset($_GET['cmd']) && isset($_GET['host'])) {
